@@ -1,0 +1,7 @@
+{
+  "tests/test_main.py::test_create_user": true,
+  "tests/test_main.py::test_get_user_by_id": true,
+  "tests/test_main.py::test_update_user": true,
+  "tests/test_main.py::test_delete_user": true,
+  "test_main.py::test_create_user": true
+}
