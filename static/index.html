@@ -1,0 +1,296 @@
+<!---Выполнила: Паскида Оксана--->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Система управления пользователями</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #333;
+      text-align: center;
+    }
+    form {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 500px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+      max-width: 500px;
+      margin: 20px auto;
+    }
+    li {
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    div {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Система управления пользователями</h1>
+
+  <!-- Блок авторизации -->
+  <div>
+    <h2>Авторизация</h2>
+    <form id="login-form">
+      <input type="text" id="login-username" name="username" placeholder="Имя пользователя" required />
+      <input type="password" id="login-password" name="password" placeholder="Пароль" required />
+      <button type="submit">Войти</button>
+    </form>
+  </div>
+
+  <!-- Список пользователей -->
+  <div>
+    <h2>Пользователи</h2>
+    <ul id="user-list"></ul>
+  </div>
+
+  <!-- Создание пользователя -->
+  <div>
+    <h2>Создание пользователя</h2>
+    <form id="create-user-form">
+      <input type="text" id="username" name="username" placeholder="Имя пользователя" required />
+      <input type="email" id="email" name="email" placeholder="Email" required />
+      <input type="text" id="full_name" name="full_name" placeholder="Полное имя" />
+      <input type="password" id="password" name="password" placeholder="Пароль" required />
+      <button type="submit">Создать пользователя</button>
+    </form>
+  </div>
+
+  <!-- Редактирование пользователя -->
+  <div>
+    <h2>Редактирование пользователя</h2>
+    <form id="update-user-form">
+      <input type="text" id="update-user-id" name="user_id" placeholder="ID пользователя" required />
+      <input type="text" id="update-username" name="username" placeholder="Новое имя пользователя" />
+      <input type="email" id="update-email" name="email" placeholder="Новый email" />
+      <input type="text" id="update-full_name" name="full_name" placeholder="Новое полное имя" />
+      <input type="password" id="update-password" name="password" placeholder="Новый пароль" />
+      <button type="submit">Обновить данные</button>
+    </form>
+  </div>
+
+  <!-- Удаление пользователя -->
+  <div>
+    <h2>Удаление пользователя</h2>
+    <form id="delete-user-form">
+      <input type="text" id="delete-user-id" name="user_id" placeholder="ID пользователя" required />
+      <button type="submit">Удалить пользователя</button>
+    </form>
+  </div>
+
+  <!-- Просмотр данных пользователя -->
+  <div>
+    <h2>Просмотр данных пользователя</h2>
+    <form id="get-user-form">
+      <input type="text" id="get-user-id" name="user_id" placeholder="ID пользователя" required />
+      <button type="submit">Показать данные</button>
+    </form>
+  </div>
+
+  <script>
+    const apiBaseUrl = "http://localhost:8000";
+    let accessToken = "";
+
+    async function fetchUsers() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/users`, {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`
+          }
+        });
+        if (!response.ok) throw new Error('Ошибка загрузки');
+        const data = await response.json();
+        renderUsers(data);
+      } catch (err) {
+        console.error('Ошибка:', err.message);
+      }
+    }
+
+    function renderUsers(users) {
+      const listEl = document.querySelector('#user-list');
+      listEl.innerHTML = '';
+      users.forEach((user) => {
+        const li = document.createElement('li');
+        li.textContent = `${user.id || user._id}: ${user.username}`;
+        listEl.appendChild(li);
+      });
+    }
+
+    document.getElementById("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const username = document.getElementById("login-username").value;
+      const password = document.getElementById("login-password").value;
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          accessToken = data.access_token;
+          alert("Авторизация успешна!");
+          fetchUsers();
+        } else {
+          alert("Ошибка входа: " + (data.detail || response.status));
+        }
+      } catch (error) {
+        console.error('Ошибка:', error.message);
+      }
+    });
+
+    document.getElementById("create-user-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const body = {
+        username: formData.get("username"),
+        email: formData.get("email"),
+        full_name: formData.get("full_name"),
+        password: formData.get("password"),
+      };
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(body),
+        });
+
+        const result = await response.json();
+
+        if (response.status === 200 || response.status === 201) {
+          alert("Пользователь успешно создан");
+          fetchUsers();
+        } else {
+          alert("Ошибка: " + (result.detail || response.status));
+        }
+      } catch (error) {
+        console.error('Ошибка:', error.message);
+      }
+    });
+
+    document.getElementById("update-user-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const userId = formData.get("user_id");
+
+      const body = {};
+      if (formData.get("username")) body.username = formData.get("username");
+      if (formData.get("email")) body.email = formData.get("email");
+      if (formData.get("full_name")) body.full_name = formData.get("full_name");
+      if (formData.get("password")) body.password = formData.get("password");
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/users/${userId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(body),
+        });
+
+        const result = await response.json();
+
+        if (response.status === 200) {
+          alert("Данные пользователя обновлены");
+          fetchUsers();
+        } else {
+          alert("Ошибка: " + (result.detail || response.status));
+        }
+      } catch (error) {
+        console.error('Ошибка:', error.message);
+      }
+    });
+
+    document.getElementById("delete-user-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const userId = document.getElementById("delete-user-id").value;
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/users/${userId}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`
+          }
+        });
+
+        if (response.status === 200) {
+          alert("Пользователь удален");
+          fetchUsers();
+        } else {
+          const result = await response.json();
+          alert("Ошибка: " + (result.detail || response.status));
+        }
+      } catch (error) {
+        console.error('Ошибка:', error.message);
+      }
+    });
+
+    document.getElementById("get-user-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const userId = document.getElementById("get-user-id").value;
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/users/${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`
+          }
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          alert(`Данные пользователя: ${JSON.stringify(userData)}`);
+        } else {
+          const result = await response.json();
+          alert("Ошибка: " + (result.detail || response.status));
+        }
+      } catch (error) {
+        console.error('Ошибка:', error.message);
+      }
+    });
+  </script>
+</body>
+</html>
